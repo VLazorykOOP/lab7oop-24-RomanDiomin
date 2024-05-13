@@ -1,211 +1,233 @@
 #include <iostream>
+#include <vector>
+#include <stdexcept>
+#include <stack>
+#include <cstring>
+
 using namespace std;
 
-class Base {
-public:
-    int baseData;
+template<typename T>
+void swapValues(T& a, T& b) {
+    T temp = a;
+    a = b;
+    b = temp;
+}
 
-    Base(int bd) : baseData(bd) {}
-    virtual ~Base() {}
-};
+template<>
+void swapValues<char*>(char*& a, char*& b) {
+    char* temp = a;
+    a = b;
+    b = temp;
+}
 
-class D1 : public Base {
-public:
-    int d1Data;
+template<typename T>
+int partition(T arr[], int low, int high) {
+    T pivot = arr[high];
+    int i = (low - 1);
+    for (int j = low; j <= high - 1; j++) {
+        if (arr[j] < pivot) {
+            i++;
+            swapValues(arr[i], arr[j]);
+        }
+    }
+    swapValues(arr[i + 1], arr[high]);
+    return (i + 1);
+}
 
-    D1(int bd, int d1d) : Base(bd), d1Data(d1d) {}
-};
+template<typename T>
+void quickSort(T arr[], int low, int high) {
+    if (low < high) {
+        int pi = partition(arr, low, high);
+        quickSort(arr, low, pi - 1);
+        quickSort(arr, pi + 1, high);
+    }
+}
 
-class D2 : public Base, public D1 {
-public:
-    int d2Data;
+template<>
+int partition<char*>(char* arr[], int low, int high) {
+    char* pivot = arr[high];
+    int i = (low - 1);
+    for (int j = low; j <= high - 1; j++) {
+        if (strcmp(arr[j], pivot) < 0) {
+            i++;
+            swapValues(arr[i], arr[j]);
+        }
+    }
+    swapValues(arr[i + 1], arr[high]);
+    return (i + 1);
+}
 
-    D2(int bd, int d2d, int d1, int d2) : Base(bd), d2Data(d2d), D1(d1, d2) {}
-};
+template<>
+void quickSort<char*>(char* arr[], int low, int high) {
+    if (low < high) {
+        int pi = partition(arr, low, high);
+        quickSort(arr, low, pi - 1);
+        quickSort(arr, pi + 1, high);
+    }
+}
 
-class D3 : public Base {
-public:
-    int d3Data;
-
-    D3(int bd, int d3d) : Base(bd), d3Data(d3d) {}
-};
-
-class D4 : public D3 {
-public:
-    int d4Data;
-
-    D4(int bd, int d3d, int d4d) : D3(bd, d3d), d4Data(d4d) {}
-};
-
-class D5 : public D3, public D2 {
-public:
-    int d5Data;
-
-    D5(int bd, int d3d, int d2d, int d5d, int d1, int d2) : D3(bd, d3d), D2(bd, d2d, d1, d2), d5Data(d5d) {}
-};
-
-
-class Figure {
-public:
-    virtual double perimeter() const = 0;
-};
-
-class Rectangle : public Figure {
+template<typename T>
+class Matrix {
 private:
-    double width;
-    double height;
+    vector<vector<T>> data;
+    size_t rows;
+    size_t cols;
 
 public:
-    Rectangle(double w, double h) : width(w), height(h) {}
+    Matrix() : rows(0), cols(0) {}
 
-    double perimeter() const override {
-        return 2 * (width + height);
+    Matrix(size_t rows, size_t cols) : rows(rows), cols(cols) {
+        data.resize(rows, vector<T>(cols));
     }
+
+    Matrix(const Matrix<T>& other) : rows(other.rows), cols(other.cols), data(other.data) {}
+
+    Matrix<T>& operator=(const Matrix<T>& other) {
+        if (this != &other) {
+            rows = other.rows;
+            cols = other.cols;
+            data = other.data;
+        }
+        return *this;
+    }
+
+    vector<T>& operator[](size_t index) {
+        if (index >= rows) {
+            throw out_of_range("Index out of range");
+        }
+        return data[index];
+    }
+
+    const vector<T>& operator[](size_t index) const {
+        if (index >= rows) {
+            throw out_of_range("Index out of range");
+        }
+        return data[index];
+    }
+
+    Matrix<T> operator+(const Matrix<T>& other) const {
+        if (rows != other.rows || cols != other.cols) {
+            throw invalid_argument("Matrices must have the same dimensions for addition");
+        }
+
+        Matrix<T> result(rows, cols);
+        for (size_t i = 0; i < rows; ++i) {
+            for (size_t j = 0; j < cols; ++j) {
+                result[i][j] = data[i][j] + other[i][j];
+            }
+        }
+        return result;
+    }
+
+    Matrix<T>& operator+=(const Matrix<T>& other) {
+        if (rows != other.rows || cols != other.cols) {
+            throw invalid_argument("Matrices must have the same dimensions for addition");
+        }
+
+        for (size_t i = 0; i < rows; ++i) {
+            for (size_t j = 0; j < cols; ++j) {
+                data[i][j] += other[i][j];
+            }
+        }
+        return *this;
+    }
+
+    size_t numRows() const {
+        return rows;
+    }
+
+    size_t numCols() const {
+        return cols;
+    }
+
+    ~Matrix() {}
+
 };
 
-class Circle : public Figure {
+template<typename T>
+class BinaryTreeNode {
+public:
+    T data;
+    BinaryTreeNode<T>* left;
+    BinaryTreeNode<T>* right;
+
+    BinaryTreeNode(const T& value) : data(value), left(nullptr), right(nullptr) {}
+};
+
+template<typename T>
+class BinaryTreeIterator {
 private:
-    double radius;
+    stack<BinaryTreeNode<T>*> nodeStack;
 
 public:
-    Circle(double r) : radius(r) {}
+    BinaryTreeIterator(BinaryTreeNode<T>* root) {
+        while (root != nullptr) {
+            nodeStack.push(root);
+            root = root->left;
+        }
+    }
 
-    double perimeter() const override {
-        return 2 * 3.14 * radius;
+    bool hasNext() const {
+        return !nodeStack.empty();
+    }
+
+    T next() {
+        if (!hasNext()) {
+            throw runtime_error("No more elements in the tree");
+        }
+
+        BinaryTreeNode<T>* current = nodeStack.top();
+        nodeStack.pop();
+
+        if (current->right != nullptr) {
+            BinaryTreeNode<T>* temp = current->right;
+            while (temp != nullptr) {
+                nodeStack.push(temp);
+                temp = temp->left;
+            }
+        }
+
+        return current->data;
     }
 };
 
-class RightTriangle : public Figure {
+template<typename T>
+class BinaryTree {
 private:
-    double side1;
-    double side2;
-    double hypotenuse;
+    BinaryTreeNode<T>* root;
 
 public:
-    RightTriangle(double s1, double s2, double hyp) : side1(s1), side2(s2), hypotenuse(hyp) {}
+    BinaryTree() : root(nullptr) {}
 
-    double perimeter() const override {
-        return side1 + side2 + hypotenuse;
+    void insert(const T& value) {
+        root = insert(root, value);
     }
-};
 
-class Trapezoid : public Figure {
+    void traverseInOrder() const {
+        BinaryTreeIterator<T> it(root);
+        while (it.hasNext()) {
+            cout << it.next() << " ";
+        }
+        cout << endl;
+    }
+
 private:
-    double base1;
-    double base2;
-    double side1;
-    double side2;
+    BinaryTreeNode<T>* insert(BinaryTreeNode<T>* node, const T& value) {
+        if (node == nullptr) {
+            return new BinaryTreeNode<T>(value);
+        }
 
-public:
-    Trapezoid(double b1, double b2, double s1, double s2) : base1(b1), base2(b2), side1(s1), side2(s2) {}
+        if (value < node->data) {
+            node->left = insert(node->left, value);
+        }
+        else {
+            node->right = insert(node->right, value);
+        }
 
-    double perimeter() const override {
-        return base1 + base2 + side1 + side2;
+        return node;
     }
 };
 
-
-class Person {
-protected:
-    string name;
-    int age;
-
-public:
-    Person(const string& n, int a) : name(n), age(a) {}
-
-    virtual ~Person() {}
-
-    virtual void display() const {
-        cout << "Name: " << name << ", Age: " << age << endl;
-    }
-
-    friend ostream& operator<<(ostream& os, const Person& person) {
-        os << "Name: " << person.name << ", Age: " << person.age;
-        return os;
-    }
-
-    friend istream& operator>>(istream& is, Person& person) {
-        cout << "Enter name: ";
-        is >> person.name;
-        cout << "Enter age: ";
-        is >> person.age;
-        return is;
-    }
-};
-
-class Woman : virtual public Person {
-protected:
-    string gender;
-
-public:
-    Woman(const string& n, int a, const string& g) : Person(n, a), gender(g) {}
-
-    void display() const override {
-        cout << "Name: " << name << ", Age: " << age << ", Gender: " << gender << endl;
-    }
-
-    friend ostream& operator<<(ostream& os, const Woman& woman) {
-        os << static_cast<const Person&>(woman) << ", Gender: " << woman.gender;
-        return os;
-    }
-
-    friend istream& operator>>(istream& is, Woman& woman) {
-        is >> static_cast<Person&>(woman);
-        cout << "Enter gender: ";
-        is >> woman.gender;
-        return is;
-    }
-};
-
-class Employee : virtual public Person {
-protected:
-    string position;
-
-public:
-    Employee(const string& n, int a, const string& pos) : Person(n, a), position(pos) {}
-
-    void display() const override {
-        cout << "Name: " << name << ", Age: " << age << ", Position: " << position << endl;
-    }
-
-    friend ostream& operator<<(ostream& os, const Employee& employee) {
-        os << static_cast<const Person&>(employee) << ", Position: " << employee.position;
-        return os;
-    }
-
-    friend istream& operator>>(istream& is, Employee& employee) {
-        is >> static_cast<Person&>(employee);
-        cout << "Enter position: ";
-        is >> employee.position;
-        return is;
-    }
-};
-
-class EmployeeWoman : public Woman, public Employee {
-public:
-    EmployeeWoman(const string& n, int a, const string& g, const string& pos)
-        : Person(n, a), Woman(n, a, g), Employee(n, a, pos) {}
-
-    void display() const override {
-        cout << "Name: " << name << ", Age: " << age << ", Gender: " << gender
-            << ", Position: " << position << endl;
-    }
-
-    friend ostream& operator<<(ostream& os, const EmployeeWoman& employeeWoman) {
-        os << static_cast<const Person&>(employeeWoman) << ", Gender: " << employeeWoman.gender
-            << ", Position: " << employeeWoman.position;
-        return os;
-    }
-
-    friend istream& operator>>(istream& is, EmployeeWoman& employeeWoman) {
-        is >> static_cast<Person&>(employeeWoman);
-        cout << "Enter gender: ";
-        is >> employeeWoman.gender;
-        cout << "Enter position: ";
-        is >> employeeWoman.position;
-        return is;
-    }
-};
 
 int main() {
     int task;
@@ -214,49 +236,76 @@ int main() {
     switch (task)
     {
     case 1: {
-        Base b(10);
-        D1 d1(20, 30);
-        D2 d2(40, 50, 34, 43);
-        D3 d3(60, 70);
-        D4 d4(80, 90, 100);
-        D5 d5(110, 120, 130, 140, 21, 32);
+        int x = 5, y = 10;
+        cout << "Before swap: x = " << x << ", y = " << y << endl;
+        swapValues(x, y);
+        cout << "After swap: x = " << x << ", y = " << y << endl;
 
-        cout << "Size of Base object: " << sizeof(b) << endl;
-        cout << "Size of D1 object: " << sizeof(d1) << endl;
-        cout << "Size of D2 object: " << sizeof(d2) << endl;
-        cout << "Size of D3 object: " << sizeof(d3) << endl;
-        cout << "Size of D4 object: " << sizeof(d4) << endl;
-        cout << "Size of D5 object: " << sizeof(d5) << endl;
+        char* str1 = (char*)"Hello";
+        char* str2 = (char*)"World";
+        cout << "Before swap: str1 = " << str1 << ", str2 = " << str2 << endl;
+        swapValues(str1, str2);
+        cout << "After swap: str1 = " << str1 << ", str2 = " << str2 << endl;
 
         break;
     }
     case 2: {
-        Rectangle rect(4, 5);
-        Circle circle(3);
-        RightTriangle triangle(3, 4, 5);
-        Trapezoid trapezoid(3, 5, 4, 6);
+        Matrix<int> m1(2, 2);
+        m1[0][0] = 1;
+        m1[0][1] = 2;
+        m1[1][0] = 3;
+        m1[1][1] = 4;
 
-        cout << "Perimeter of rectangle: " << rect.perimeter() << endl;
-        cout << "Perimeter of circle: " << circle.perimeter() << endl;
-        cout << "Perimeter of right triangle: " << triangle.perimeter() << endl;
-        cout << "Perimeter of trapezoid: " << trapezoid.perimeter() << endl;
+        Matrix<int> m2(2, 2);
+        m2[0][0] = 5;
+        m2[0][1] = 6;
+        m2[1][0] = 7;
+        m2[1][1] = 8;
+
+        Matrix<int> m3 = m1 + m2;
+
+        cout << "Matrix m1:" << endl;
+        for (size_t i = 0; i < m1.numRows(); ++i) {
+            for (size_t j = 0; j < m1.numCols(); ++j) {
+                cout << m1[i][j] << " ";
+            }
+            cout << endl;
+        }
+
+        cout << "Matrix m2:" << endl;
+        for (size_t i = 0; i < m2.numRows(); ++i) {
+            for (size_t j = 0; j < m2.numCols(); ++j) {
+                cout << m2[i][j] << " ";
+            }
+            cout << endl;
+        }
+
+        cout << "Matrix m3 (m1 + m2):" << endl;
+        for (size_t i = 0; i < m3.numRows(); ++i) {
+            for (size_t j = 0; j < m3.numCols(); ++j) {
+                cout << m3[i][j] << " ";
+            }
+            cout << endl;
+        }
         break;
     }
     case 3: {
-        Person person("John", 30);
-        cout << "Person: " << person << endl;
+        BinaryTree<int> tree;
+        tree.insert(5);
+        tree.insert(3);
+        tree.insert(8);
+        tree.insert(2);
+        tree.insert(4);
+        tree.insert(7);
+        tree.insert(9);
 
-        Woman woman("Alice", 25, "female");
-        cout << "Woman: " << woman << endl;
-
-        Employee employee("Bob", 40, "Manager");
-        cout << "Employee: " << employee << endl;
-
-        EmployeeWoman employeeWoman("Mary", 35, "female", "CEO");
-        cout << "EmployeeWoman: " << employeeWoman << endl;
+        cout << "In-order traversal of the binary tree:" << endl;
+        tree.traverseInOrder();
         break;
     }
+    default:
+        cout << "Invalid task number." << endl;
+        break;
     }
     return 0;
 }
-
